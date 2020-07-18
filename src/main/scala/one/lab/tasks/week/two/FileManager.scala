@@ -1,6 +1,8 @@
 package one.lab.tasks.week.two
 
+import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 import scala.jdk.CollectionConverters._
@@ -36,10 +38,74 @@ object FileManager extends App {
 
   case class ChangePathError(error: String)
 
-  def getFiles(path: String): List[String]                                       = ???
-  def getDirectories(path: String): List[String]                                 = ???
-  def changePath(current: String, path: String): Either[ChangePathError, String] = ???
-  def parseCommand(input: String): Command                                       = ???
-  def handleCommand(command: Command, currentPath: String): String               = ???
-  def main(basePath: String): Unit                                               = ???
+  val filterFiles: Path => Boolean       = path => path.toFile.isFile
+  val filterDirectories: Path => Boolean = path => path.toFile.isDirectory
+
+  def getContent(path: String, func: Path => Boolean): List[String] =
+    Files
+      .list(Paths.get("dsfasdfas"))
+      .iterator()
+      .asScala
+      .filter(func) // Path => Boolean
+      .map(path => path.toFile.getName)
+      .map(x => s"$path/$x")
+      .toList
+
+  def changePath(current: String, path: String): Either[ChangePathError, String] =
+    Files.isDirectory(Paths.get(current + "/" + path)) match {
+      case true  => Right(current + "/" + path)
+      case false => Left(ChangePathError("directory doesn't exists"))
+    }
+
+  private def parseCommand(input: String): Command =
+    if (input == "ll") ListAllContentCommand()
+    else if (input == "ls") ListFilesCommand()
+    else if (input == "dir") ListDirectoryCommand()
+    else if (input.startsWith("cd"))
+      input
+        .split(" ")
+        .tail
+        .headOption
+        .map(dir => ChangeDirectoryCommand(dir))
+        .getOrElse(PrintErrorCommand("invalid format"))
+    else PrintErrorCommand("command not found")
+
+  def handleCommand(command: Command, currentPath: String): String =
+    command match {
+      case ListAllContentCommand() =>
+        (getContent(currentPath, filterFiles) ++ getContent(currentPath, filterDirectories)).mkString("\n")
+      case ListFilesCommand()       => getContent(currentPath, filterFiles).mkString("\n")
+      case ListDirectoryCommand()   => getContent(currentPath, filterDirectories).mkString("\n")
+      case PrintErrorCommand(error) => error
+      case ChangeDirectoryCommand(destination) =>
+        changePath(currentPath, destination) match {
+          case Left(value)  => value.error
+          case Right(value) => value
+        }
+    }
+
+  def printString(str: String) = print(str)
+
+  def main(basePath: String): Unit = {
+    def innerLoop(currentPath: String): Unit = {
+      scala.io.StdIn
+        .readLine()
+        .pipe(input => parseCommand(input))
+        .pipe(command => (command, handleCommand(command, currentPath)))
+        .tap { case (_, output) => println(output) }
+        .tap {
+          case (command, output) =>
+            if (command.isSubstitutive) innerLoop(output)
+            else innerLoop(currentPath)
+        }
+
+      println("You are in directory ->")
+      println(s"$basePath")
+      innerLoop(basePath)
+    }
+
+    innerLoop(basePath)
+  }
+
+  main("/Users/artur/src/github.com/arturka")
 }

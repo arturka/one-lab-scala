@@ -16,7 +16,8 @@ object Artifacts {
   val sttp      = "com.softwaremill.sttp.client" %% "core"      % "2.2.1"
 
   val akkaHttp   = "com.typesafe.akka" %% "akka-http"   % "10.1.12"
-  val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.26"
+  val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.6.7"
+  val akkaActors = "com.typesafe.akka" %% "akka-actor"  % "2.6.7"
 }
 
 object Dependencies {
@@ -29,7 +30,8 @@ object Dependencies {
     requests,
     sttp,
     akkaHttp,
-    akkaStream
+    akkaStream,
+    akkaActors
   )
 
 }
